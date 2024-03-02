@@ -1,0 +1,150 @@
+Sub MultipleYearStockDataOnAllWorksheets()
+    Dim ws As Worksheet
+
+    For Each ws In ThisWorkbook.Worksheets
+        MultipleYearStockData ws
+    Next ws
+End Sub
+
+Sub MultipleYearStockData(ws As Worksheet)
+    'Current row
+    Dim i As Long
+    
+    'Start of row for ticker block
+    Dim j As Long
+    
+    'Index counter in order to fill the Ticker row
+    Dim TickCount As Long
+    
+    'Last row (A) (Column)
+    Dim LastRowA As Long
+    
+    'last row (I) (Column)
+    Dim LastRowI As Long
+    
+    'Code for Percent change calculation
+    Dim PerChange As Double
+    
+    'Code for greatest increase calculation
+    Dim GreatIncr As Double
+    
+    'Code for the greatest decrease calculation
+    Dim GreatDecr As Double
+    
+    'Code for the greatest total volume
+    Dim GreatVol As Double
+
+    'Code to get the WorksheetName
+    Dim WorksheetName As String
+    WorksheetName = ws.Name
+
+    'Column headers
+    ws.Cells(1, 9).Value = "Ticker"
+    ws.Cells(1, 10).Value = "Yearly Change"
+    ws.Cells(1, 11).Value = "Percent Change"
+    ws.Cells(1, 12).Value = "Total Stock Volume"
+    ws.Cells(1, 16).Value = "Ticker"
+    ws.Cells(1, 17).Value = "Value"
+    ws.Cells(2, 15).Value = "Greatest % Increase"
+    ws.Cells(3, 15).Value = "Greatest % Decrease"
+    ws.Cells(4, 15).Value = "Greatest Total Volume"
+
+    'Setting Ticker Counter to the first row
+    TickCount = 2
+
+    'Set start row to 2
+    j = 2
+
+    'Code to find the last non-blank cell in column A
+    LastRowA = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    'Looping through all rows
+    For i = 2 To LastRowA
+    
+        'Checking to see if the ticker name changed
+        If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+        
+            'Writing ticker in column I
+            ws.Cells(TickCount, 9).Value = ws.Cells(i, 1).Value
+
+            'Calculate and write Yearly Change in column J (#10)
+            ws.Cells(TickCount, 10).Value = ws.Cells(i, 6).Value - ws.Cells(j, 3).Value
+
+            'Conditional formatting
+            If ws.Cells(TickCount, 10).Value < 0 Then
+            
+                'Set color to red
+                ws.Cells(TickCount, 10).Interior.ColorIndex = 3
+            Else
+                'Set color to green
+                ws.Cells(TickCount, 10).Interior.ColorIndex = 4
+            End If
+
+            'Calculate and write percent change in column K (#11)
+            If ws.Cells(j, 3).Value <> 0 Then
+                PerChange = ((ws.Cells(i, 6).Value - ws.Cells(j, 3).Value) / ws.Cells(j, 3).Value)
+
+                'Percent formatting
+                ws.Cells(TickCount, 11).Value = Format(PerChange, "Percent")
+            Else
+                ws.Cells(TickCount, 11).Value = Format(0, "Percent")
+            End If
+
+            'Calculate and write total volume in column L (#12)
+            ws.Cells(TickCount, 12).Value = WorksheetFunction.Sum(ws.Range(ws.Cells(j, 7), ws.Cells(i, 7)))
+
+            'Increase TickCount by 1
+            TickCount = TickCount + 1
+
+            'Set the new start row of the ticker block
+            j = i + 1
+        End If
+    Next i
+
+    'Find the last non-blank cell in column I
+    LastRowI = ws.Cells(ws.Rows.Count, 9).End(xlUp).Row
+
+    ' Conclusion
+    GreatVol = ws.Cells(2, 12).Value
+    GreatIncr = ws.Cells(2, 11).Value
+    GreatDecr = ws.Cells(2, 11).Value
+
+    'Loop for the Conclusion
+    For i = 2 To LastRowI
+    
+        'For the greatest total volume--check if the next value is larger--if it is take over a new value and fill in the Cells
+        If ws.Cells(i, 12).Value > GreatVol Then
+            GreatVol = ws.Cells(i, 12).Value
+            ws.Cells(4, 16).Value = ws.Cells(i, 9).Value
+        Else
+            GreatVol = GreatVol
+        End If
+
+        'For the greatest increase--check to see if the next value is larger--if it is take over a new value and populate the Cells
+        If ws.Cells(i, 11).Value > GreatIncr Then
+            GreatIncr = ws.Cells(i, 11).Value
+            ws.Cells(2, 16).Value = ws.Cells(i, 9).Value
+        Else
+            GreatIncr = GreatIncr
+        End If
+
+        'For the greatest decrease--check to see if the next value is smaller--if it is take over a new value and populate the Cells
+        If ws.Cells(i, 11).Value < GreatDecr Then
+            GreatDecr = ws.Cells(i, 11).Value
+            ws.Cells(3, 16).Value = ws.Cells(i, 9).Value
+        Else
+            GreatDecr = GreatDecr
+        End If
+
+    Next i
+
+    'Adjust the results in the Cells
+    ws.Cells(2, 17).Value = Format(GreatIncr, "Percent")
+    ws.Cells(3, 17).Value = Format(GreatDecr, "Percent")
+    ws.Cells(4, 17).Value = Format(GreatVol, "Scientific")
+
+    'Adjust the column width 
+    ws.Columns("A:Z").AutoFit
+End Sub
+
+
